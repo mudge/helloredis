@@ -1,6 +1,6 @@
-This is an experimental Ruby FFI interface to [Hiredis][0].
+This is an incomplete, experimental Ruby FFI interface to [Hiredis][0].
 
-It exists mainly as a tool to teach me about [Ruby's FFI interface][1] as such
+It exists mainly as a tool to teach me about [Ruby's FFI interface][1] and, as such,
 the location of `libhiredis.dylib` is hard-coded into `hiredis.rb`. If you want
 to tinker with this yourself, make sure to amend that path.
 
