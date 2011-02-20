@@ -4,7 +4,7 @@ module Hiredis
   extend FFI::Library
 
   # Be sure to set this to the location of your compiled libhiredis library.
-  ffi_lib '/usr/local/lib/libhiredis.dylib'
+  ffi_lib ['/usr/local/lib/libhiredis.dylib', '/usr/local/lib/libhiredis.so']
 
   class Context < FFI::ManagedStruct
     layout :fd, :int,

@@ -208,4 +208,155 @@ describe Helloredis do
       expect { subject.renamenx("foo", "woo") }.to raise_error
     end
   end
+
+  describe "#lpush" do
+    it "returns the length of the list" do
+      subject.lpush("foo", "bar").should == 1
+    end
+
+    it "raises an error if the key exists and is not a list" do
+      subject.set("foo", "bar")
+      expect { subject.lpush("foo", "bar") }.to raise_error
+    end
+  end
+
+  describe "#sort" do
+    it "returns a sorted list in the simplest form" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 1)
+      subject.lpush("foo", 2)
+      subject.sort("foo").should == ["1", "2", "3"]
+    end
+
+    it "can return a sorted list in descending order" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 1)
+      subject.lpush("foo", 2)
+      subject.sort("foo", :order => :desc).should == ["3", "2", "1"]
+    end
+
+    it "can sort alphabetically" do
+      subject.lpush("foo", "c")
+      subject.lpush("foo", "a")
+      subject.lpush("foo", "b")
+      subject.sort("foo", :alpha => true).should == ["a", "b", "c"]
+    end
+
+    it "can sort alphabetically in reverse" do
+      subject.lpush("foo", "c")
+      subject.lpush("foo", "a")
+      subject.lpush("foo", "b")
+      subject.sort("foo", :alpha => true, :order => :desc).should == ["c", "b", "a"]
+    end
+
+    it "can limit sorting" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 1)
+      subject.lpush("foo", 2)
+      subject.sort("foo", :count => 2, :offset => 0).should == ["1", "2"]
+    end
+
+    it "does defaults to offset 0 with only count" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 1)
+      subject.lpush("foo", 2)
+      subject.sort("foo", :count => 2).should == ["1", "2"]
+    end
+
+    it "sorts by external keys" do
+      subject.lpush("people", "mrnormal")
+      subject.lpush("people", "mrfat")
+      subject.lpush("people", "mrskinny")
+      subject.set("weight_mrfat", 100)
+      subject.set("weight_mrnormal", 75)
+      subject.set("weight_mrskinny", 50)
+      subject.sort("people", :by => "weight_*").should == ["mrskinny", "mrnormal", "mrfat"]
+    end
+
+    it "retrieves external keys" do
+      subject.lpush("people", "mrnormal")
+      subject.lpush("people", "mrfat")
+      subject.lpush("people", "mrskinny")
+      subject.set("weight_mrfat", 100)
+      subject.set("weight_mrnormal", 75)
+      subject.set("weight_mrskinny", 50)
+      subject.set("name_mrfat", "Bob")
+      subject.set("name_mrnormal", "Carl")
+      subject.set("name_mrskinny", "Harry")
+      subject.sort("people", :by => "weight_*", :get => "name_*").should == ["Harry", "Carl", "Bob"]
+    end
+
+    it "supports multiple GET options" do
+      subject.lpush("people", "mrnormal")
+      subject.lpush("people", "mrfat")
+      subject.lpush("people", "mrskinny")
+      subject.set("weight_mrfat", 100)
+      subject.set("weight_mrnormal", 75)
+      subject.set("weight_mrskinny", 50)
+      subject.set("name_mrfat", "Bob")
+      subject.set("name_mrnormal", "Carl")
+      subject.set("name_mrskinny", "Harry")
+      subject.sort("people", :by => "weight_*", :get => ["name_*", "weight_*"]).should == ["Harry", "50", "Carl", "75", "Bob", "100"]
+    end
+
+    it "can store the result in a key" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 1)
+      subject.lpush("foo", 2)
+      subject.sort("foo", :store => "sorted_foo")
+      subject.lrange("sorted_foo", 0, 2).should == ["1", "2", "3"]
+    end
+  end
+
+  describe "#lrange" do
+    it "returns part of a list" do
+      subject.lpush("foo", 3)
+      subject.lpush("foo", 2)
+      subject.lpush("foo", 1)
+      subject.lrange("foo", 0, 1).should == ["1", "2"]
+    end
+  end
+
+  describe "#ttl" do
+    it "returns the remaining time to live of a key" do
+      subject.set("foo", "bar")
+      subject.expire("foo", 10)
+      subject.ttl("foo").should == 10
+    end
+
+    it "returns -1 when the key does not exist" do
+      subject.ttl("foo").should == -1
+    end
+  end
+
+  describe "#type" do
+    it "returns the type of the value stored at key" do
+      subject.set("foo", "bar")
+      subject.lpush("woo", "bar")
+      subject.type("foo").should == "string"
+      subject.type("woo").should == "list"
+    end
+  end
+
+  describe "#decr" do
+    it "returns the new integer value of the key" do
+      subject.set("foo", 10)
+      subject.decr("foo").should == 9
+    end
+  end
+
+  describe "#decrby" do
+    it "returns the new integer value of the key" do
+      subject.set("foo", 10)
+      subject.decrby("foo", 5).should == 5
+    end
+  end
+
+  describe "#substr" do
+    it "returns the substring of the string value stored at key" do
+      subject.set("foo", "This is a string")
+      subject.substr("foo", 0, 3).should == "This"
+      subject.substr("foo", -3, -1).should == "ing"
+    end
+  end
 end

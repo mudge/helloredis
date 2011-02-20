@@ -92,6 +92,74 @@ class Helloredis
     1 == send_and_return("RENAMENX %s %s", :string, key.to_s, :string, newkey.to_s)
   end
 
+  def lpush(key, value)
+    send_and_return("LPUSH %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
+  def sort(key, options={})
+    command = "SORT %s"
+    arguments = [:string, key.to_s]
+
+    if options[:by]
+      command << " BY %s"
+      arguments += [:string, options[:by].to_s]
+    end
+
+    if options[:count]
+      command << " LIMIT %s %s"
+      arguments += [:string, (options[:offset] || 0).to_i.to_s, :string, options[:count].to_i.to_s]
+    end
+
+    if options[:get]
+      Array(options[:get]).each do |get|
+        command << " GET %s"
+        arguments += [:string, get.to_s]
+      end
+    end
+
+    case options[:order]
+    when :asc
+      command << " ASC"
+    when :desc
+      command << " DESC"
+    end
+
+    if options[:alpha]
+      command << " ALPHA"
+    end
+
+    if options[:store]
+      command << " STORE %s"
+      arguments += [:string, options[:store].to_s]
+    end
+
+    send_and_return(command, *arguments)
+  end
+
+  def lrange(key, start, stop)
+    send_and_return("LRANGE %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
+  def ttl(key)
+    send_and_return("TTL %s", :string, key.to_s)
+  end
+
+  def type(key)
+    send_and_return("TYPE %s", :string, key.to_s)
+  end
+
+  def decr(key)
+    send_and_return("DECR %s", :string, key.to_s)
+  end
+
+  def decrby(key, decrement)
+    send_and_return("DECRBY %s %s", :string, key.to_s, :string, decrement.to_s)
+  end
+
+  def substr(key, start, stop)
+    send_and_return("SUBSTR %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
   private
 
   def send_and_return(*args)
