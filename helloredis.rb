@@ -3,8 +3,14 @@ require './hiredis'
 class Helloredis
   attr_accessor :context
 
-  def initialize(host="127.0.0.1", port=6379)
-    context_pointer = Hiredis.redisConnect(host, port)
+  def initialize(options={})
+    options[:host] ||= "127.0.0.1"
+    options[:port] ||= 6379
+    context_pointer = if options[:path]
+      Hiredis.redisConnectUnix(options[:path])
+    else
+      Hiredis.redisConnect(options[:host], options[:port])
+    end
     @context = Hiredis::Context.new(context_pointer)
     raise @context[:errstr] if 1 == @context[:err]
   end
@@ -158,6 +164,115 @@ class Helloredis
 
   def substr(key, start, stop)
     send_and_return("SUBSTR %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
+  def getset(key, value)
+    send_and_return("GETSET %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
+  def incr(key)
+    send_and_return("INCR %s", :string, key.to_s)
+  end
+
+  def incrby(key, increment)
+    send_and_return("INCRBY %s %s", :string, key.to_s, :string, increment.to_s)
+  end
+
+  def mget(key, *keys)
+    command = "MGET %s"
+    arguments = [:string, key.to_s]
+
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+
+    send_and_return(command, *arguments)
+  end
+
+  def mset(keys_and_values)
+    command = "MSET"
+    arguments = []
+    keys_and_values.each do |key, value|
+      command << " %s %s"
+      arguments += [:string, key.to_s, :string, value.to_s]
+    end
+
+    send_and_return(command, *arguments)
+  end
+
+  def msetnx(values)
+    command = "MSETNX"
+    arguments = []
+    values.to_a.flatten.each do |value|
+      command << " %s"
+      arguments += [:string, value.to_s]
+    end
+
+    1 == send_and_return(command, *arguments)
+  end
+
+  def setex(key, seconds, value)
+    send_and_return("SETEX %s %s %s", :string, key.to_s, :string, seconds.to_i.to_s, :string, value.to_s)
+  end
+
+  def setnx(key, value)
+    1 == send_and_return("SETNX %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
+  def hset(key, field, value)
+    1 == send_and_return("HSET %s %s %s", :string, key.to_s, :string, field.to_s, :string, value.to_s)
+  end
+
+  def hget(key, field)
+    send_and_return("HGET %s %s", :string, key.to_s, :string, field.to_s)
+  end
+
+  def hdel(key, field)
+    1 == send_and_return("HDEL %s %s", :string, key.to_s, :string, field.to_s)
+  end
+
+  def hexists(key, field)
+    1 == send_and_return("HEXISTS %s %s", :string, key.to_s, :string, field.to_s)
+  end
+
+  def hgetall(key)
+    values = send_and_return("HGETALL %s", :string, key.to_s)
+    Hash[*values]
+  end
+
+  def hincrby(key, field, increment)
+    send_and_return("HINCRBY %s %s %s", :string, key.to_s, :string, field.to_s, :string, increment.to_i.to_s)
+  end
+
+  def hkeys(key)
+    send_and_return("HKEYS %s", :string, key.to_s)
+  end
+
+  def hlen(key)
+    send_and_return("HLEN %s", :string, key.to_s)
+  end
+
+  def hmget(key, field, *fields)
+    command = "HMGET %s %s"
+    arguments = [:string, key.to_s, :string, field.to_s]
+
+    fields.each do |field|
+      command << " %s"
+      arguments += [:string, field.to_s]
+    end
+
+    send_and_return(command, *arguments)
+  end
+
+  def hmset(key, fields_and_values)
+    command = "HMSET %s"
+    arguments = [:string, key.to_s]
+    fields_and_values.each do |field, value|
+      command << " %s %s"
+      arguments += [:string, field.to_s, :string, value.to_s]
+    end
+    send_and_return(command, *arguments)
   end
 
   private

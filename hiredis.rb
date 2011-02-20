@@ -6,6 +6,11 @@ module Hiredis
   # Be sure to set this to the location of your compiled libhiredis library.
   ffi_lib ['/usr/local/lib/libhiredis.dylib', '/usr/local/lib/libhiredis.so']
 
+  class Timeval < FFI::Struct
+    layout :tv_sec, :long,
+           :tv_usec, :long
+  end
+
   class Context < FFI::ManagedStruct
     layout :fd, :int,
            :flags, :int,
@@ -40,6 +45,11 @@ module Hiredis
   end
 
   attach_function :redisConnect, [:string, :int], :pointer
+  attach_function :redisConnectWithTimeout, [:string, :int, Hiredis::Timeval], :pointer
+  attach_function :redisConnectNonBlock, [:string, :int], :pointer
+  attach_function :redisConnectUnix, [:string], :pointer
+  attach_function :redisConnectUnixWithTimeout, [:string, Hiredis::Timeval], :pointer
+  attach_function :redisConnectUnixNonBlock, [:string], :pointer
   attach_function :redisCommand, [:pointer, :string, :varargs], :pointer
   attach_function :freeReplyObject, [:pointer], :void
   attach_function :redisFree, [:pointer], :void

@@ -11,7 +11,8 @@ describe Helloredis do
   end
 
   it "raises an exception if it can't connect" do
-    expect { Helloredis.new("localhost", 666) }.to raise_error
+    expect { Helloredis.new(:host => "localhost", :port => 666) }.to raise_error
+    expect { Helloredis.new(:path => "/fake.redis") }.to raise_error
   end
 
   describe "#set" do
@@ -357,6 +358,174 @@ describe Helloredis do
       subject.set("foo", "This is a string")
       subject.substr("foo", 0, 3).should == "This"
       subject.substr("foo", -3, -1).should == "ing"
+    end
+  end
+
+  describe "#getset" do
+    it "returns the old value of the key" do
+      subject.set("foo", "bar")
+      subject.getset("foo", "baz").should == "bar"
+      subject.get("foo").should == "baz"
+    end
+
+    it "raises an error if the key is not a string" do
+      subject.lpush("foo", "bar")
+      expect { subject.getset("foo", "baz") }.to raise_error
+    end
+  end
+
+  describe "#incr" do
+    it "returns the new integer value of the key" do
+      subject.set("foo", 10)
+      subject.incr("foo").should == 11
+    end
+  end
+
+  describe "#incrby" do
+    it "returns the new integer value of the key" do
+      subject.set("foo", 10)
+      subject.incrby("foo", 5).should == 15
+    end
+  end
+
+  describe "#mget" do
+    it "returns a list of values" do
+      subject.set("foo1", "bar1")
+      subject.set("foo2", "bar2")
+      subject.set("foo3", "bar3")
+      subject.mget("foo1", "foo2", "foo3").should == ["bar1", "bar2", "bar3"]
+    end
+
+    it "requires at least one key" do
+      expect { subject.mget }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe "#mset" do
+    it "returns OK" do
+      subject.mset("foo1" => "bar1", "foo2" => "bar2").should == "OK"
+      subject.get("foo1").should == "bar1"
+      subject.get("foo2").should == "bar2"
+    end
+  end
+
+  describe "#msetnx" do
+    it "returns true or false depending on whether the keys were set" do
+      subject.msetnx("key1" => "Hello", "key2" => "there").should == true
+      subject.msetnx("key2" => "there", "key3" => "world").should == false
+      subject.mget("key1", "key2", "key3").should == ["Hello", "there", nil]
+    end
+  end
+
+  describe "#setex" do
+    it "returns OK on success" do
+      subject.setex("foo", 10, "bar").should == "OK"
+      subject.ttl("foo").should == 10
+      subject.get("foo").should == "bar"
+    end
+  end
+
+  describe "#setnx" do
+    it "returns true if the key was set" do
+      subject.setnx("foo", "bar").should == true
+    end
+
+    it "returns false if the key was not set" do
+      subject.set("foo", "bar")
+      subject.setnx("foo", "baz").should == false
+    end
+  end
+
+  describe "#hset" do
+    it "returns true if a new field was set" do
+      subject.hset("hash", "foo", "bar").should == true
+    end
+
+    it "returns false if the field already exists and was updated" do
+      subject.hset("hash", "foo", "bar")
+      subject.hset("hash", "foo", "baz").should == false
+    end
+  end
+
+  describe "#hget" do
+    it "returns the value of the field" do
+      subject.hset("hash", "foo", "bar")
+      subject.hget("hash", "foo").should == "bar"
+    end
+  end
+
+  describe "#hdel" do
+    it "returns true if the field was present and is now removed" do
+      subject.hset("hash", "foo", "bar")
+      subject.hdel("hash", "foo").should == true
+    end
+
+    it "returns false if the field or hash does not exist" do
+      subject.hdel("hash", "foo").should == false
+    end
+  end
+
+  describe "#hexists" do
+    it "returns true if the hash contains field" do
+      subject.hset("hash", "foo", "bar")
+      subject.hexists("hash", "foo").should == true
+    end
+
+    it "returns false if the hash does not contain field" do
+      subject.hexists("hash", "foo").should == false
+    end
+  end
+
+  describe "#hgetall" do
+    it "returns a list of all fields and their values" do
+      subject.hset("hash", "foo1", "bar1")
+      subject.hset("hash", "foo2", "bar2")
+      subject.hgetall("hash").should == {"foo1" => "bar1", "foo2" => "bar2"}
+    end
+
+    it "returns an empty hash if the key doesn't exist" do
+      subject.hgetall("hash").should == {}
+    end
+  end
+
+  describe "#hincrby" do
+    it "returns the new integer value of the field" do
+      subject.hset("hash", "foo", 5)
+      subject.hincrby("hash", "foo", 1).should == 6
+      subject.hincrby("hash", "foo", -1).should == 5
+      subject.hincrby("hash", "foo", -10).should == -5
+    end
+  end
+
+  describe "#hkeys" do
+    it "returns the list of all fields in the hash" do
+      subject.hset("hash", "foo1", "bar1")
+      subject.hset("hash", "foo2", "bar2")
+      subject.hkeys("hash").should == ["foo1", "foo2"]
+    end
+  end
+
+  describe "#hlen" do
+    it "returns the number of fields in the hash" do
+      subject.hset("hash", "foo1", "bar1")
+      subject.hset("hash", "foo2", "bar2")
+      subject.hlen("hash").should == 2
+    end
+  end
+
+  describe "#hmget" do
+    it "returns a list of values for the given fields" do
+      subject.hset("hash", "foo1", "bar1")
+      subject.hset("hash", "foo2", "bar2")
+      subject.hmget("hash", "foo1", "foo2", "foo3").should == ["bar1", "bar2", nil]
+    end
+  end
+
+  describe "#hmset" do
+    it "returns OK on success" do
+      subject.hmset("hash", "foo1" => "bar1", "foo2" => "bar2").should == "OK"
+      subject.hget("hash", "foo1").should == "bar1"
+      subject.hget("hash", "foo2").should == "bar2"
     end
   end
 end
