@@ -1,4 +1,4 @@
-require './hiredis'
+require "spec_helper"
 
 describe Hiredis do
   describe "#redisConnect" do
@@ -33,11 +33,13 @@ describe Hiredis do
         set_reply = Hiredis::Reply.new(set_reply_pointer)
         set_reply[:type].should == Hiredis::Reply::STATUS
         set_reply[:str].should == "OK"
+        Hiredis.freeReplyObject(set_reply_pointer)
 
         get_reply_pointer = Hiredis.redisCommand(hiredis, "GET foo")
         get_reply = Hiredis::Reply.new(get_reply_pointer)
         get_reply[:type].should == Hiredis::Reply::STRING
         get_reply[:str].should == "bar"
+        Hiredis.freeReplyObject(get_reply_pointer)
       end
 
       it "works with varargs" do
@@ -45,6 +47,7 @@ describe Hiredis do
         set_reply = Hiredis::Reply.new(set_reply_pointer)
         set_reply[:type].should == Hiredis::Reply::STATUS
         set_reply[:str].should == "OK"
+        Hiredis.freeReplyObject(set_reply_pointer)
       end
 
       it "works with binary safe strings" do
@@ -52,6 +55,7 @@ describe Hiredis do
         set_reply = Hiredis::Reply.new(set_reply_pointer)
         set_reply[:type].should == Hiredis::Reply::STATUS
         set_reply[:str].should == "OK"
+        Hiredis.freeReplyObject(set_reply_pointer)
       end
     end
 
@@ -64,12 +68,14 @@ describe Hiredis do
         set_reply = Hiredis::Reply.new(reply_pointer.read_pointer)
         set_reply[:type].should == Hiredis::Reply::STATUS
         set_reply[:str].should == "OK"
+        Hiredis.freeReplyObject(reply_pointer.read_pointer)
 
         reply_pointer = FFI::MemoryPointer.new(:pointer)
         Hiredis.redisGetReply(hiredis, reply_pointer).should == Hiredis::Reply::OK
         get_reply = Hiredis::Reply.new(reply_pointer.read_pointer)
         get_reply[:type].should == Hiredis::Reply::STRING
         get_reply[:str].should == "bar"
+        Hiredis.freeReplyObject(reply_pointer.read_pointer)
       end
     end
   end

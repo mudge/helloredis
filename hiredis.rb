@@ -4,7 +4,7 @@ module Hiredis
   extend FFI::Library
 
   # Be sure to set this to the location of your compiled libhiredis library.
-  ffi_lib '/Users/mudge/Downloads/hiredis/libhiredis.dylib'
+  ffi_lib '/usr/local/lib/libhiredis.dylib'
 
   class Context < FFI::ManagedStruct
     layout :fd, :int,
@@ -20,7 +20,7 @@ module Hiredis
     end
   end
 
-  class Reply < FFI::ManagedStruct
+  class Reply < FFI::Struct
     OK = 0
     ERR = -1
 
@@ -36,11 +36,7 @@ module Hiredis
            :len, :int,
            :str, :string,
            :elements, :size_t,
-           :redisReply, :pointer
-
-    def self.release(ptr)
-      Hiredis.freeReplyObject(ptr)
-    end
+           :element, :pointer
   end
 
   attach_function :redisConnect, [:string, :int], :pointer
