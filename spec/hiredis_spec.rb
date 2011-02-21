@@ -6,13 +6,6 @@ describe Hiredis do
       expect { Hiredis.redisConnect("127.0.0.1", 6379) }.not_to raise_error
     end
 
-    it "connects without error with a timeout" do
-      timeval = Hiredis::Timeval.new
-      timeval[:tv_sec] = 1
-      timeval[:tv_usec] = 0
-      expect { Hiredis.redisConnectWithTimeout("127.0.0.1", 6379, timeval) }.not_to raise_error
-    end
-
     it "has no error" do
       context_pointer = Hiredis.redisConnect("127.0.0.1", 6379)
       context = Hiredis::Context.new(context_pointer)

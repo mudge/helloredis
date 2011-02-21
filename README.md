@@ -8,13 +8,12 @@ path as necessary.
 Prerequisites
 =============
 
-* [Hiredis][0] installed to `/usr/local/lib`;
-* If you want to experiment with a timeout when connecting to a Redis server, you
-  will need a recent HEAD version of Hiredis with [timeout support][2].
+* [Hiredis][0] 0.9.2 installed to `/usr/local/lib`.
 
 Usage
 =====
 
+    # With the project's lib directory on your load path...
     require "helloredis"
 
     redis = Helloredis.new # defaults to connecting to 127.0.0.1:6379
@@ -33,4 +32,3 @@ See `spec/helloredis_spec.rb` for more usage information.
 
   [0]: https://github.com/antirez/hiredis
   [1]: https://github.com/ffi/ffi
-  [2]: https://github.com/antirez/hiredis/compare/663d6d1258b3ef49178e...36f73fdb0c8756a53cb7

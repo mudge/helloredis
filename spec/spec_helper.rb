@@ -1,5 +1,6 @@
+$:.unshift(File.expand_path("../../lib", __FILE__))
 require "socket"
-require "./helloredis"
+require "helloredis"
 
 # Ensure that Redis is running when testing.
 begin

@@ -558,4 +558,252 @@ describe Helloredis do
       subject.rpush("list", "foo").should == 1
     end
   end
+
+  describe "#blpop" do
+    it "returns the key and value" do
+      subject.rpush("list2", "foo")
+      subject.rpush("list3", "foo")
+      subject.blpop("list1", "list2", "list3", 1).should == ["list2", "foo"]
+    end
+  end
+
+  describe "#brpop" do
+    it "returns the key and value" do
+      subject.rpush("list2", "foo")
+      subject.rpush("list2", "woo")
+      subject.rpush("list3", "foo")
+      subject.brpop("list1", "list2", "list3", 1).should == ["list2", "woo"]
+    end
+  end
+
+  describe "#lindex" do
+    it "returns the element" do
+      subject.rpush("foo", "bar")
+      subject.rpush("foo", "baz")
+      subject.lindex("foo", 0).should == "bar"
+      subject.lindex("foo", -1).should == "baz"
+    end
+  end
+
+  describe "#llen" do
+    it "returns the length of the list" do
+      subject.rpush("foo", "bar")
+      subject.llen("foo").should == 1
+    end
+  end
+
+  describe "#lpop" do
+    it "returns the element" do
+      subject.rpush("foo", "bar")
+      subject.rpush("foo", "baz")
+      subject.lpop("foo").should == "bar"
+      subject.lrange("foo", 0, -1).should == ["baz"]
+    end
+  end
+
+  describe "#lrem" do
+    it "returns the number of removed elements" do
+      subject.rpush("foo", "bar")
+      subject.rpush("foo", "bar")
+      subject.rpush("foo", "baz")
+      subject.rpush("foo", "bar")
+      subject.lrem("foo", -2, "bar").should == 2
+      subject.lrange("foo", 0, -1).should == ["bar", "baz"]
+    end
+  end
+
+  describe "#lset" do
+    it "returns OK on success" do
+      subject.rpush("foo", "one")
+      subject.rpush("foo", "two")
+      subject.rpush("foo", "three")
+      subject.lset("foo", 0, "four").should == "OK"
+      subject.lset("foo", -2, "five").should == "OK"
+      subject.lrange("foo", 0, -1).should == ["four", "five", "three"]
+    end
+  end
+
+  describe "#ltrim" do
+    it "returns OK on success" do
+      subject.rpush("foo", "one")
+      subject.rpush("foo", "two")
+      subject.rpush("foo", "three")
+      subject.ltrim("foo", 1, -1).should == "OK"
+      subject.lrange("foo", 0, -1).should == ["two", "three"]
+    end
+  end
+
+  describe "#rpop" do
+    it "returns the value of the last element" do
+      subject.rpush("foo", "one")
+      subject.rpush("foo", "two")
+      subject.rpush("foo", "three")
+      subject.rpop("foo").should == "three"
+      subject.lrange("foo", 0, -1).should == ["one", "two"]
+    end
+  end
+
+  describe "#rpoplpush" do
+    it "returns the element being popped and pushed" do
+      subject.rpush("foo", "one")
+      subject.rpush("foo", "two")
+      subject.rpush("foo", "three")
+      subject.rpoplpush("foo", "foo2").should == "three"
+      subject.lrange("foo", 0, -1).should == ["one", "two"]
+      subject.lrange("foo2", 0, -1).should == ["three"]
+    end
+  end
+
+  describe "#sadd" do
+    it "returns true if the element was added" do
+      subject.sadd("foo", "bar").should == true
+    end
+
+    it "returns false if the element was already a member" do
+      subject.sadd("foo", "bar")
+      subject.sadd("foo", "bar").should == false
+    end
+  end
+
+  describe "#scard" do
+    it "returns the number of elements in the set" do
+      subject.sadd("foo", "bar")
+      subject.scard("foo").should == 1
+    end
+  end
+
+  describe "#sdiff" do
+    it "returns the members of the resulting set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sdiff("foo1", "foo2").should == ["a", "b"]
+    end
+  end
+
+  describe "#sdiffstore" do
+    it "returns the number of elements in the set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sdiffstore("foodiff", "foo1", "foo2").should == 2
+      subject.smembers("foodiff").should == ["a", "b"]
+    end
+  end
+
+  describe "#smembers" do
+    it "returns all elements of the set" do
+      subject.sadd("foo", "bar")
+      subject.sadd("foo", "baz")
+      subject.smembers("foo").should == ["baz", "bar"]
+    end
+  end
+
+  describe "#sinter" do
+    it "returns the members of the resulting set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sinter("foo1", "foo2").should == ["c"]
+    end
+  end
+
+  describe "#sinterstore" do
+    it "returns the number of elements in the resulting set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sinterstore("foointer", "foo1", "foo2").should == 1
+      subject.smembers("foointer").should == ["c"]
+    end
+  end
+
+  describe "#sismember" do
+    it "returns true if the element is a member of the set" do
+      subject.sadd("foo", "bar")
+      subject.sismember("foo", "bar").should == true
+    end
+
+    it "returns false if the element is not a member of the set" do
+      subject.sismember("foo", "bar").should == false
+    end
+  end
+
+  describe "#smove" do
+    it "returns true if the element is moved" do
+      subject.sadd("foo", "one")
+      subject.sadd("foo", "two")
+      subject.sadd("foo2", "three")
+      subject.smove("foo", "foo2", "two").should == true
+      subject.smembers("foo").should == ["one"]
+      subject.smembers("foo2").should == ["three", "two"]
+    end
+  end
+
+  describe "#spop" do
+    it "returns the removed element" do
+      subject.sadd("foo", "bar")
+      subject.spop("foo").should == "bar"
+      subject.smembers("foo").should == []
+    end
+  end
+
+  describe "#srandmember" do
+    it "returns a randomly selected element" do
+      subject.sadd("foo", "bar")
+      subject.srandmember("foo").should == "bar"
+      subject.smembers("foo").should == ["bar"]
+    end
+  end
+
+  describe "#srem" do
+    it "returns true if the element was removed" do
+      subject.sadd("foo", "one")
+      subject.sadd("foo", "two")
+      subject.srem("foo", "two").should == true
+      subject.smembers("foo").should == ["one"]
+    end
+
+    it "returns false if the element was not a member of the set" do
+      subject.sadd("foo", "one")
+      subject.srem("foo", "two").should == false
+    end
+  end
+
+  describe "#sunion" do
+    it "returns the members of the resulting set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sunion("foo1", "foo2").should == ["c", "d", "a", "b", "e"]
+    end
+  end
+
+  describe "#sunionstore" do
+    it "returns the number of elements in the resulting set" do
+      subject.sadd("foo1", "a")
+      subject.sadd("foo1", "b")
+      subject.sadd("foo1", "c")
+      subject.sadd("foo2", "c")
+      subject.sadd("foo2", "d")
+      subject.sadd("foo2", "e")
+      subject.sunionstore("foounion", "foo1", "foo2").should == 5
+      subject.smembers("foounion").should == ["c", "d", "a", "b", "e"]
+    end
+  end
 end

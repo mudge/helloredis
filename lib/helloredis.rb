@@ -1,4 +1,4 @@
-require './hiredis'
+require 'hiredis'
 
 class Helloredis
   attr_accessor :context
@@ -285,6 +285,156 @@ class Helloredis
 
   def rpush(key, value)
     send_and_return("RPUSH %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
+  def blpop(key, *keys_and_timeout)
+    timeout = keys_and_timeout.pop
+    command = "BLPOP %s"
+    arguments = [:string, key.to_s]
+    keys_and_timeout.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    command << " %s"
+    arguments += [:string, timeout.to_i.to_s]
+    send_and_return(command, *arguments)
+  end
+
+  def brpop(key, *keys_and_timeout)
+    timeout = keys_and_timeout.pop
+    command = "BRPOP %s"
+    arguments = [:string, key.to_s]
+    keys_and_timeout.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    command << " %s"
+    arguments += [:string, timeout.to_i.to_s]
+    send_and_return(command, *arguments)
+  end
+
+  def lindex(key, index)
+    send_and_return("LINDEX %s %s", :string, key.to_s, :string, index.to_i.to_s)
+  end
+
+  def llen(key)
+    send_and_return("LLEN %s", :string, key.to_s)
+  end
+
+  def lpop(key)
+    send_and_return("LPOP %s", :string, key.to_s)
+  end
+
+  def lrem(key, count, value)
+    send_and_return("LREM %s %s %s", :string, key.to_s, :string, count.to_s, :string, value.to_s)
+  end
+
+  def lset(key, index, value)
+    send_and_return("LSET %s %s %s", :string, key.to_s, :string, index.to_i.to_s, :string, value.to_s)
+  end
+
+  def ltrim(key, start, stop)
+    send_and_return("LTRIM %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
+  def rpop(key)
+    send_and_return("RPOP %s", :string, key.to_s)
+  end
+
+  def rpoplpush(source, destination)
+    send_and_return("RPOPLPUSH %s %s", :string, source.to_s, :string, destination.to_s)
+  end
+
+  def sadd(key, member)
+    1 == send_and_return("SADD %s %s", :string, key.to_s, :string, member.to_s)
+  end
+
+  def scard(key)
+    send_and_return("SCARD %s", :string, key.to_s)
+  end
+
+  def sdiff(key, *keys)
+    command = "SDIFF %s"
+    arguments = [:string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
+  end
+
+  def sdiffstore(destination, key, *keys)
+    command = "SDIFFSTORE %s %s"
+    arguments = [:string, destination.to_s, :string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
+  end
+
+  def smembers(key)
+    send_and_return("SMEMBERS %s", :string, key.to_s)
+  end
+
+  def sinter(key, *keys)
+    command = "SINTER %s"
+    arguments = [:string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
+  end
+
+  def sinterstore(destination, key, *keys)
+    command = "SINTERSTORE %s %s"
+    arguments = [:string, destination.to_s, :string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
+  end
+
+  def sismember(key, member)
+    1 == send_and_return("SISMEMBER %s %s", :string, key.to_s, :string, member.to_s)
+  end
+
+  def smove(source, destination, member)
+    1 == send_and_return("SMOVE %s %s %s", :string, source.to_s, :string, destination.to_s, :string, member.to_s)
+  end
+
+  def spop(key)
+    send_and_return("SPOP %s", :string, key.to_s)
+  end
+
+  def srandmember(key)
+    send_and_return("SRANDMEMBER %s", :string, key.to_s)
+  end
+
+  def srem(key, member)
+    1 == send_and_return("SREM %s %s", :string, key.to_s, :string, member.to_s)
+  end
+
+  def sunion(key, *keys)
+    command = "SUNION %s"
+    arguments = [:string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
+  end
+
+  def sunionstore(destination, key, *keys)
+    command = "SUNIONSTORE %s %s"
+    arguments = [:string, destination.to_s, :string, key.to_s]
+    keys.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+    send_and_return(command, *arguments)
   end
 
   private
