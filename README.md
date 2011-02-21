@@ -5,6 +5,14 @@ the location of the `libhiredis` library is hard-coded into `hiredis.rb` as bein
 `/usr/local/lib`. If you want to tinker with this yourself, make sure to amend that
 path as necessary.
 
+Prerequisites
+=============
+
+* [Hiredis][0] installed to `/usr/local/lib`;
+* If you want to experiment with a timeout when connecting to a Redis server, you
+  will need a recent HEAD version of Hiredis (at least
+  antirez/hiredis@36f73fdb0c8756a53cb7129835d54ab240b911a4).
+
 Usage
 =====
 
