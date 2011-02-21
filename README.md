@@ -10,8 +10,7 @@ Prerequisites
 
 * [Hiredis][0] installed to `/usr/local/lib`;
 * If you want to experiment with a timeout when connecting to a Redis server, you
-  will need a recent HEAD version of Hiredis (at least
-  antirez/hiredis@36f73fdb0c8756a53cb7129835d54ab240b911a4).
+  will need a recent HEAD version of Hiredis with [timeout support][2].
 
 Usage
 =====
@@ -34,3 +33,4 @@ See `spec/helloredis_spec.rb` for more usage information.
 
   [0]: https://github.com/antirez/hiredis
   [1]: https://github.com/ffi/ffi
+  [2]: https://github.com/antirez/hiredis/compare/663d6d1258b3ef49178e...36f73fdb0c8756a53cb7
