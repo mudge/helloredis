@@ -275,6 +275,18 @@ class Helloredis
     send_and_return(command, *arguments)
   end
 
+  def hsetnx(key, field, value)
+    1 == send_and_return("HSETNX %s %s %s", :string, key.to_s, :string, field.to_s, :string, value.to_s)
+  end
+
+  def hvals(key)
+    send_and_return("HVALS %s", :string, key.to_s)
+  end
+
+  def rpush(key, value)
+    send_and_return("RPUSH %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
   private
 
   def send_and_return(*args)

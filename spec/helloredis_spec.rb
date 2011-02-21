@@ -528,4 +528,34 @@ describe Helloredis do
       subject.hget("hash", "foo2").should == "bar2"
     end
   end
+
+  describe "#hsetnx" do
+    it "returns true if the field was new and has been set" do
+      subject.hsetnx("hash", "foo", "bar").should == true
+    end
+
+    it "returns false if the field already exists" do
+      subject.hset("hash", "foo", "bar")
+      subject.hsetnx("hash", "foo", "baz").should == false
+      subject.hget("hash", "foo").should == "bar"
+    end
+  end
+
+  describe "#hvals" do
+    it "returns the list of values in a hash" do
+      subject.hset("hash", "foo1", "bar1")
+      subject.hset("hash", "foo2", "bar2")
+      subject.hvals("hash").should == ["bar1", "bar2"]
+    end
+
+    it "returns an empty list if the key does not exist" do
+      subject.hvals("hash").should == []
+    end
+  end
+
+  describe "#rpush" do
+    it "returns the length of the list" do
+      subject.rpush("list", "foo").should == 1
+    end
+  end
 end
