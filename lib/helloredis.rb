@@ -1,3 +1,4 @@
+require 'enumerator'
 require 'rubygems/version'
 require 'hiredis'
 
@@ -503,7 +504,9 @@ class Helloredis
   def zrange(key, start, stop, options={})
     if options[:scores]
       values_and_scores = send_and_return("ZRANGE %s %s %s WITHSCORES", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
-      values_and_scores.each_slice(2).to_a
+      values_and_scores_tuples = []
+      values_and_scores.each_slice(2) { |slice| values_and_scores_tuples << slice }
+      values_and_scores_tuples
     else
       send_and_return("ZRANGE %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
     end
