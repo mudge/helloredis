@@ -437,6 +437,30 @@ class Helloredis
     send_and_return(command, *arguments)
   end
 
+  def zadd(key, score, member)
+    1 == send_and_return("ZADD %s %s %s", :string, key.to_s, :string, score.to_s, :string, member.to_s)
+  end
+
+  def zcard(key)
+    send_and_return("ZCARD %s", :string, key.to_s)
+  end
+
+  def zcount(key, min, max)
+    send_and_return("ZCOUNT %s %s %s", :string, key.to_s, :string, min.to_s, :string, max.to_s)
+  end
+
+  def zincrby(key, increment, member)
+    send_and_return("ZINCRBY %s %s %s", :string, key.to_s, :string, increment.to_s, :string, member.to_s)
+  end
+
+  def zrange(key, start, stop, options={})
+    if options[:scores]
+      values_and_scores = send_and_return("ZRANGE %s %s %s WITHSCORES", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+      values_and_scores.each_slice(2).to_a
+    else
+      send_and_return("ZRANGE %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+    end
+  end
   private
 
   def send_and_return(*args)

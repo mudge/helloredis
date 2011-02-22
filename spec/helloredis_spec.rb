@@ -806,4 +806,56 @@ describe Helloredis do
       subject.smembers("foounion").should == ["c", "d", "a", "b", "e"]
     end
   end
+
+  describe "#zadd" do
+    it "returns true if the element was added" do
+      subject.zadd("foo", 1, "one").should == true
+    end
+
+    it "returns false if the element was already a member of the set" do
+      subject.zadd("foo", 1, "one")
+      subject.zadd("foo", 2, "one").should == false
+    end
+  end
+
+  describe "#zcard" do
+    it "returns the number of elements" do
+      subject.zadd("foo", 1, "one")
+      subject.zcard("foo").should == 1
+    end
+  end
+
+  describe "#zcount" do
+    it "returns the number of elements in the score range" do
+      subject.zadd("foo", 1, "one")
+      subject.zadd("foo", 2, "two")
+      subject.zadd("foo", 3, "three")
+      subject.zcount("foo", "-inf", "+inf").should == 3
+      subject.zcount("foo", "(1", "3").should == 2
+    end
+  end
+
+  describe "#zincrby" do
+    it "returns the new score" do
+      subject.zadd("foo", 1, "one")
+      subject.zadd("foo", 2, "two")
+      subject.zincrby("foo", 2, "one").should == "3"
+    end
+  end
+
+  describe "#zrange" do
+    it "returns a list of elements in the range" do
+      subject.zadd("foo", 1, "one")
+      subject.zadd("foo", 2, "two")
+      subject.zadd("foo", 3, "three")
+      subject.zrange("foo", 0, -1).should == ["one", "two", "three"]
+    end
+
+    it "returns a list of elements in the range with scores" do
+      subject.zadd("foo", 1, "one")
+      subject.zadd("foo", 2, "two")
+      subject.zadd("foo", 3, "three")
+      subject.zrange("foo", 0, -1, :scores => true).should == [["one", "1"], ["two", "2"], ["three", "3"]]
+    end
+  end
 end
