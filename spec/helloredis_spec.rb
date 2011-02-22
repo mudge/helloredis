@@ -1,4 +1,5 @@
 require "spec_helper"
+require "rubygems/version"
 
 describe Helloredis do
   before(:each) do
@@ -13,6 +14,12 @@ describe Helloredis do
   it "raises an exception if it can't connect" do
     expect { Helloredis.new(:host => "localhost", :port => 666) }.to raise_error
     expect { Helloredis.new(:path => "/fake.redis") }.to raise_error
+  end
+
+  describe "#version" do
+    it "returns a Gem::Version" do
+      subject.version.should be_a(Gem::Version)
+    end
   end
 
   describe "#set" do
@@ -141,19 +148,20 @@ describe Helloredis do
     end
   end
 
-  # # Redis 2.1.2+ feature.
-  # describe "#persist" do
-  #   it "returns true if the timeout was removed" do
-  #     subject.set("foo", "bar")
-  #     subject.expire("foo", 10)
-  #     subject.persist("foo").should == true
-  #   end
+  if REDIS_VERSION > Gem::Version.new("2.1.2")
+    describe "#persist" do
+      it "returns true if the timeout was removed" do
+        subject.set("foo", "bar")
+        subject.expire("foo", 10)
+        subject.persist("foo").should == true
+      end
 
-  #   it "returns false if there was no timeout" do
-  #     subject.set("foo", "bar")
-  #     subject.persist("foo").should == false
-  #   end
-  # end
+      it "returns false if there was no timeout" do
+        subject.set("foo", "bar")
+        subject.persist("foo").should == false
+      end
+    end
+  end
 
   describe "#info" do
     it "returns a hash of info" do
@@ -218,6 +226,24 @@ describe Helloredis do
     it "raises an error if the key exists and is not a list" do
       subject.set("foo", "bar")
       expect { subject.lpush("foo", "bar") }.to raise_error
+    end
+  end
+
+  if REDIS_VERSION >= Gem::Version.new("2.1.1")
+    describe "#lpushx" do
+      it "returns the length of the list" do
+        subject.lpush("mylist", "World")
+        subject.lpush("mylist", "Hello").should == 2
+        subject.lpushx("myotherlist", "Hello").should == 0
+      end
+    end
+
+    describe "#rpushx" do
+      it "returns the length of the list" do
+        subject.rpush("mylist", "World")
+        subject.rpush("mylist", "Hello").should == 2
+        subject.rpushx("myotherlist", "Hello").should == 0
+      end
     end
   end
 
@@ -353,11 +379,59 @@ describe Helloredis do
     end
   end
 
-  describe "#substr" do
-    it "returns the substring of the string value stored at key" do
-      subject.set("foo", "This is a string")
-      subject.substr("foo", 0, 3).should == "This"
-      subject.substr("foo", -3, -1).should == "ing"
+  if REDIS_VERSION >= Gem::Version.new("2.1.8")
+    describe "#getbit" do
+      it "returns the bit value stored at offset" do
+        subject.setbit("key", 7, 1)
+        subject.getbit("key", 0).should == 0
+        subject.getbit("key", 7).should == 1
+        subject.getbit("key", 100).should == 0
+      end
+    end
+
+    describe "#setbit" do
+      it "returns the original bit value stored at offset" do
+        subject.setbit("key", 7, 1).should == 0
+        subject.setbit("key", 7, 0).should == 1
+        subject.get("key").should == ""
+      end
+    end
+  end
+
+  if REDIS_VERSION <= Gem::Version.new("2.1")
+    describe "#substr" do
+      it "returns the substring of the string value stored at key" do
+        subject.set("foo", "This is a string")
+        subject.substr("foo", 0, 3).should == "This"
+        subject.substr("foo", -3, -1).should == "ing"
+      end
+    end
+  else
+    describe "#getrange" do
+      it "returns the substring of the string value stored at key" do
+        subject.set("foo", "This is a string")
+        subject.getrange("foo", 0, 3).should == "This"
+        subject.getrange("foo", -3, -1).should == "ing"
+      end
+    end
+  end
+
+  if REDIS_VERSION >= Gem::Version.new("2.1.8")
+    describe "#setrange" do
+      it "returns the length of the string after it was modified" do
+        subject.set("key1", "Hello World")
+        subject.setrange("key1", 6, "Redis").should == 11
+        subject.get("key1").should == "Hello Redis"
+      end
+    end
+  end
+
+  if REDIS_VERSION >= Gem::Version.new("2.1.2")
+    describe "#strlen" do
+      it "returns the length of the string" do
+        subject.set("key", "Hello world")
+        subject.strlen("key").should == 11
+      end
     end
   end
 
@@ -576,12 +650,40 @@ describe Helloredis do
     end
   end
 
+  if REDIS_VERSION >= Gem::Version.new("2.1.7")
+    describe "#brpoplpush" do
+      it "returns the element being popped" do
+        subject.rpush("list1", "one")
+        subject.rpush("list1", "two")
+        subject.rpush("list1", "three")
+        subject.brpoplpush("list1", "list2", 1).should == "three"
+      end
+    end
+  end
+
   describe "#lindex" do
     it "returns the element" do
       subject.rpush("foo", "bar")
       subject.rpush("foo", "baz")
       subject.lindex("foo", 0).should == "bar"
       subject.lindex("foo", -1).should == "baz"
+    end
+  end
+
+  if REDIS_VERSION >= Gem::Version.new("2.1.1")
+    describe "#linsert" do
+      it "returns the length of the list after the insert" do
+        subject.rpush("mylist", "Hello")
+        subject.rpush("mylist", "World")
+        subject.linsert("mylist", "There", :before => "World").should == 3
+        subject.lrange("mylist", 0, -1).should == ["Hello", "There", "World"]
+      end
+
+      it "only accepts :before and :after" do
+        subject.rpush("mylist", "Hello")
+        subject.rpush("mylist", "World")
+        expect { subject.linsert("mylist", "World", :between => "World") }.to raise_error
+      end
     end
   end
 
@@ -856,6 +958,18 @@ describe Helloredis do
       subject.zadd("foo", 2, "two")
       subject.zadd("foo", 3, "three")
       subject.zrange("foo", 0, -1, :scores => true).should == [["one", "1"], ["two", "2"], ["three", "3"]]
+    end
+  end
+
+  describe "#zinterstore" do
+    it "returns the number of elements in the resulting sorted set" do
+      subject.zadd("zset1", 1, "one")
+      subject.zadd("zset1", 2, "two")
+      subject.zadd("zset2", 1, "one")
+      subject.zadd("zset2", 2, "two")
+      subject.zadd("zset2", 3, "three")
+      subject.zinterstore("out", 2, "zset1", "zset2", :weights => [2, 3], :aggregate => :sum).should == 2
+      subject.zrange("out", 0, -1, :scores => true).should == [["one", "5"], ["two", "10"]]
     end
   end
 end

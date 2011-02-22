@@ -1,3 +1,4 @@
+require 'rubygems/version'
 require 'hiredis'
 
 class Helloredis
@@ -102,6 +103,14 @@ class Helloredis
     send_and_return("LPUSH %s %s", :string, key.to_s, :string, value.to_s)
   end
 
+  def lpushx(key, value)
+    send_and_return("LPUSHX %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
+  def rpushx(key, value)
+    send_and_return("RPUSHX %s %s", :string, key.to_s, :string, value.to_s)
+  end
+
   def sort(key, options={})
     command = "SORT %s"
     arguments = [:string, key.to_s]
@@ -162,8 +171,28 @@ class Helloredis
     send_and_return("DECRBY %s %s", :string, key.to_s, :string, decrement.to_s)
   end
 
+  def getbit(key, offset)
+    send_and_return("GETBIT %s %s", :string, key.to_s, :string, offset.to_i.to_s)
+  end
+
+  def setbit(key, offset, value)
+    send_and_return("SETBIT %s %s %s", :string, key.to_s, :string, offset.to_i.to_s, :string, value.to_i.to_s)
+  end
+
   def substr(key, start, stop)
     send_and_return("SUBSTR %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
+  def getrange(key, start, stop)
+    send_and_return("GETRANGE %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
+  end
+
+  def setrange(key, offset, value)
+    send_and_return("SETRANGE %s %s %s", :string, key.to_s, :string, offset.to_i.to_s, :string, value.to_s)
+  end
+
+  def strlen(key)
+    send_and_return("STRLEN %s", :string, key.to_s)
   end
 
   def getset(key, value)
@@ -317,6 +346,20 @@ class Helloredis
     send_and_return("LINDEX %s %s", :string, key.to_s, :string, index.to_i.to_s)
   end
 
+  def linsert(key, value, position_and_pivot)
+    if position_and_pivot[:before]
+      position = "BEFORE"
+      pivot = position_and_pivot[:before]
+    elsif position_and_pivot[:after]
+      position = "AFTER"
+      pivot = position_and_pivot[:after]
+    else
+      raise "pivot must either be :before or :after"
+    end
+
+    send_and_return("LINSERT %s #{position} %s %s", :string, key.to_s, :string, pivot.to_s, :string, value.to_s)
+  end
+
   def llen(key)
     send_and_return("LLEN %s", :string, key.to_s)
   end
@@ -343,6 +386,10 @@ class Helloredis
 
   def rpoplpush(source, destination)
     send_and_return("RPOPLPUSH %s %s", :string, source.to_s, :string, destination.to_s)
+  end
+
+  def brpoplpush(source, destination, timeout)
+    send_and_return("BRPOPLPUSH %s %s %s", :string, source.to_s, :string, destination.to_s, :string, timeout.to_s)
   end
 
   def sadd(key, member)
@@ -461,6 +508,38 @@ class Helloredis
       send_and_return("ZRANGE %s %s %s", :string, key.to_s, :string, start.to_i.to_s, :string, stop.to_i.to_s)
     end
   end
+
+  def zinterstore(destination, numkeys, key, *keys_and_options)
+    options = keys_and_options.last.is_a?(Hash) ? keys_and_options.pop : {}
+
+    command = "ZINTERSTORE %s %s %s"
+    arguments = [:string, destination.to_s, :string, numkeys.to_i.to_s, :string, key.to_s]
+
+    keys_and_options.each do |key|
+      command << " %s"
+      arguments += [:string, key.to_s]
+    end
+
+    if options[:weights] && !Array(options[:weights]).empty?
+      command << " WEIGHTS"
+      Array(options[:weights]).each do |weight|
+        command << " %s"
+        arguments += [:string, weight.to_s]
+      end
+    end
+
+    case options[:aggregate]
+    when :sum, :min, :max
+      command << " AGGREGATE #{options[:aggregate].to_s.upcase}"
+    end
+
+    send_and_return(command, *arguments)
+  end
+
+  def version
+    Gem::Version.new(info["redis_version"])
+  end
+
   private
 
   def send_and_return(*args)
